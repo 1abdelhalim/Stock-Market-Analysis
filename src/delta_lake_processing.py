@@ -87,34 +87,6 @@ def clean_and_transform_data():
 
     print("✅ Data cleaned, transformed, and saved in Delta Lake format.")
 
-def compute_financial_metrics():
-    """Compute financial metrics and save the final dataset."""
-    # Read cleaned data
-    df = spark.read.format("delta").load(CLEANED_DELTA_TABLE_PATH)
-
-    # Compute additional metrics
-    window_spec = Window.partitionBy("Ticker").orderBy("Date")
-
-    # Compute RSI (Relative Strength Index)
-    df = df.withColumn("Change", col("Close") - lag("Close", 1).over(window_spec))
-    df = df.withColumn("Gain", when(col("Change") > 0, col("Change")).otherwise(0))
-    df = df.withColumn("Loss", when(col("Change") < 0, -col("Change")).otherwise(0))
-    df = df.withColumn("Avg_Gain", avg("Gain").over(window_spec.rowsBetween(-13, 0)))
-    df = df.withColumn("Avg_Loss", avg("Loss").over(window_spec.rowsBetween(-13, 0)))
-    df = df.withColumn("RS", col("Avg_Gain") / col("Avg_Loss"))
-    df = df.withColumn("RSI", 100 - (100 / (1 + col("RS"))))
-
-    # Compute Sharpe Ratio
-    df = df.withColumn("Daily_Return", (col("Close") - lag("Close", 1).over(window_spec)) / lag("Close", 1).over(window_spec))
-    df = df.withColumn("Mean_Return", avg("Daily_Return").over(window_spec.rowsBetween(-19, 0)))
-    df = df.withColumn("Std_Dev_Return", stddev("Daily_Return").over(window_spec.rowsBetween(-19, 0)))
-    df = df.withColumn("Sharpe_Ratio", col("Mean_Return") / col("Std_Dev_Return"))
-
-    # Save the final dataset
-    df.write.format("delta").mode("overwrite").save(FINAL_DELTA_TABLE_PATH)
-
-    print("✅ Financial metrics computed and saved.")
-
 if __name__ == "__main__":
     load_csv_to_parquet()
     partition_data()
