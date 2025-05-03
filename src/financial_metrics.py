@@ -3,6 +3,10 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, avg, lit, sum, mean, stddev, lag, when
 from pyspark.sql.window import Window
 from delta.tables import DeltaTable
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Initialize Spark session
 spark = SparkSession.builder \
@@ -12,9 +16,9 @@ spark = SparkSession.builder \
     .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
     .getOrCreate()
 
-# Define paths
-CLEANED_DELTA_TABLE_PATH = "/home/abdelhalim/Desktop/Temp /StockMarketAnalysis/data/delta_tables/cleaned_tech_stocks"
-FINAL_DELTA_TABLE_PATH = "/home/abdelhalim/Desktop/Temp /StockMarketAnalysis/data/delta_tables/tech_stocks"
+# Define paths from environment variables or use defaults
+CLEANED_DELTA_TABLE_PATH = os.getenv("CLEANED_DELTA_TABLE_PATH", "data/delta_tables/cleaned_tech_stocks")
+FINAL_DELTA_TABLE_PATH = os.getenv("FINAL_DELTA_TABLE_PATH", "data/delta_tables/tech_stocks")
 
 # Ensure the output directory exists
 if not os.path.exists(FINAL_DELTA_TABLE_PATH):

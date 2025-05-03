@@ -4,12 +4,21 @@ from delta.tables import DeltaTable
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, avg, stddev, lag, when, lit, last
 from pyspark.sql.window import Window
+from dotenv import load_dotenv
 
-DATA_DIR = "/home/abdelhalim/Desktop/Temp /StockMarketAnalysis/data/"
-CSV_FILE_PATH = os.path.join(DATA_DIR, "tech_stocks.csv")
-DELTA_TABLE_PATH = os.path.join(DATA_DIR, "delta_tables/tech_stocks")
-CLEANED_DELTA_TABLE_PATH = os.path.join(DATA_DIR, "delta_tables/cleaned_tech_stocks")
-FINAL_DELTA_TABLE_PATH = os.path.join(DATA_DIR, "delta_tables/final_tech_stocks")
+# Load environment variables
+load_dotenv()
+
+# Get paths from environment variables or use defaults
+DATA_DIR = os.getenv("DATA_DIR", "data")
+CSV_FILE_PATH = os.getenv("CSV_FILE_PATH", os.path.join(DATA_DIR, "tech_stocks.csv"))
+DELTA_TABLE_PATH = os.getenv("DELTA_TABLE_PATH", os.path.join(DATA_DIR, "delta_tables/tech_stocks"))
+CLEANED_DELTA_TABLE_PATH = os.getenv("CLEANED_DELTA_TABLE_PATH", os.path.join(DATA_DIR, "delta_tables/cleaned_tech_stocks"))
+FINAL_DELTA_TABLE_PATH = os.getenv("FINAL_DELTA_TABLE_PATH", os.path.join(DATA_DIR, "delta_tables/final_tech_stocks"))
+
+# Ensure directories exist
+for path in [os.path.dirname(CSV_FILE_PATH), DELTA_TABLE_PATH, CLEANED_DELTA_TABLE_PATH, FINAL_DELTA_TABLE_PATH]:
+    os.makedirs(path, exist_ok=True)
 
 # Spark session with Delta Lake
 from pyspark.sql import SparkSession

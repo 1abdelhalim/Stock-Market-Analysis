@@ -2,22 +2,48 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import datetime
+import os
+import glob
+from dotenv import load_dotenv
 
-# File paths
-CSV_FILE_PATH = "/home/abdelhalim/Desktop/Temp /StockMarketAnalysis/data/tech_stocks.csv"
+# Load environment variables
+load_dotenv()
 
-METRICS_FILE_PATH = "/home/abdelhalim/Desktop/Temp /StockMarketAnalysis/data/delta_tables/cleaned_tech_stocks/part-00000-32e1b63e-c912-4b62-b80e-ed23a65207ec-c000.snappy.parquet"
+# File paths - use environment variables or defaults
+CSV_FILE_PATH = os.getenv("CSV_FILE_PATH", "data/tech_stocks.csv")
+CLEANED_DELTA_TABLE_PATH = os.getenv("CLEANED_DELTA_TABLE_PATH", "data/delta_tables/cleaned_tech_stocks")
 
 # Load data
 @st.cache_data
 def load_data():
+    # Load stock data from CSV
+    if not os.path.exists(CSV_FILE_PATH):
+        st.error(f"Stock data file not found at {CSV_FILE_PATH}. Please run the data ingestion pipeline first.")
+        st.stop()
+    
     stock_data = pd.read_csv(CSV_FILE_PATH)
-
-    # Check if the metrics file exists
+    
+    # Find parquet files in the cleaned delta table directory
+    if not os.path.exists(CLEANED_DELTA_TABLE_PATH):
+        st.error(f"Metrics directory not found at {CLEANED_DELTA_TABLE_PATH}. Please run the data processing pipeline first.")
+        st.stop()
+    
+    # Find the first parquet file in the directory
+    parquet_files = glob.glob(os.path.join(CLEANED_DELTA_TABLE_PATH, "*.parquet"))
+    if not parquet_files:
+        parquet_files = glob.glob(os.path.join(CLEANED_DELTA_TABLE_PATH, "**/*.parquet"))
+    
+    if not parquet_files:
+        st.error("No metrics files found. Please ensure the pipeline has generated the metrics files.")
+        st.stop()
+    
+    metrics_file_path = parquet_files[0]
+    
+    # Load metrics data from parquet
     try:
-        metrics_data = pd.read_parquet(METRICS_FILE_PATH)
-    except FileNotFoundError:
-        st.error("Metrics file not found. Please ensure the pipeline has generated the final metrics file.")
+        metrics_data = pd.read_parquet(metrics_file_path)
+    except Exception as e:
+        st.error(f"Error loading metrics data: {e}")
         st.stop()
 
     # Convert 'Date' column to datetime
@@ -52,9 +78,14 @@ def main():
     # Overview
     st.subheader("Overview")
     col1, col2, col3 = st.columns(3)
-    col1.metric("Latest Closing Price", f"${filtered_stock_data['Close'].iloc[-1]:.2f}")
-    col2.metric("Average Closing Price", f"${filtered_stock_data['Close'].mean():.2f}")
-    col3.metric("Total Trading Volume", f"{filtered_stock_data['Volume'].sum():,}")
+    
+    if not filtered_stock_data.empty:
+        col1.metric("Latest Closing Price", f"${filtered_stock_data['Close'].iloc[-1]:.2f}")
+        col2.metric("Average Closing Price", f"${filtered_stock_data['Close'].mean():.2f}")
+        col3.metric("Total Trading Volume", f"{filtered_stock_data['Volume'].sum():,}")
+    else:
+        st.warning("No data available for the selected filters.")
+        st.stop()
 
     # Essential Metrics
     st.subheader("Essential Metrics")
@@ -63,16 +94,16 @@ def main():
     st.markdown("- **Sharpe Ratio:** Indicates the risk-adjusted return of an investment. Higher values are better.")
 
     col4, col5 = st.columns(2)
-    if "RSI" in filtered_metrics_data.columns:
+    if "RSI" in filtered_metrics_data.columns and not filtered_metrics_data.empty:
         col4.metric("RSI (Relative Strength Index)", f"{filtered_metrics_data['RSI'].iloc[-1]:.2f}")
-    if "Sharpe_Ratio" in filtered_metrics_data.columns:
+    if "Sharpe_Ratio" in filtered_metrics_data.columns and not filtered_metrics_data.empty:
         col5.metric("Sharpe Ratio", f"{filtered_metrics_data['Sharpe_Ratio'].iloc[-1]:.2f}")
 
     # Visualizations
     st.subheader("Visualizations")
     st.plotly_chart(px.line(filtered_stock_data, x="Date", y="Close", title=f"{ticker} Closing Price"), use_container_width=True)
 
-    if "MA_20" in filtered_metrics_data.columns:
+    if "MA_20" in filtered_metrics_data.columns and not filtered_metrics_data.empty:
         st.plotly_chart(px.line(filtered_metrics_data, x="Date", y="MA_20", title=f"{ticker} 20-Day Moving Average"), use_container_width=True)
 
     st.plotly_chart(px.bar(filtered_stock_data, x="Date", y="Volume", title=f"{ticker} Trading Volume"), use_container_width=True)

@@ -9,6 +9,13 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 
 from data_ingestion import fetch_stock_data, validate_data, save_data_to_csv
 from delta_lake_processing import partition_data, clean_and_transform_data
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Get CSV path from environment variables or use default
+CSV_FILE_PATH = os.getenv("CSV_FILE_PATH", "data/tech_stocks.csv")
 
 # Default arguments for the DAG
 default_args = {
@@ -34,7 +41,7 @@ dag = DAG(
 def ingest_data():
     stock_data = fetch_stock_data()
     validated_data = validate_data(stock_data)
-    save_data_to_csv(validated_data, '/home/abdelhalim/Desktop/Temp /StockMarketAnalysis/data/tech_stocks.csv')
+    save_data_to_csv(validated_data, CSV_FILE_PATH)
 
 ingest_task = PythonOperator(
     task_id='ingest_data',
