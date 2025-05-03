@@ -69,16 +69,4 @@ StockMarketAnalysis/
 3. **Access the Dashboard**:
    Open your browser and navigate to `http://localhost:8501`
 
-## Financial Metrics
-The analysis includes:
-- Moving Averages (20-day)
-- Relative Strength Index (RSI)
-- Sharpe Ratio
-- Daily Returns
 
-## License
-[MIT License](LICENSE)
-````
-
-## Contact
-For questions or contributions, please reach out via GitHub.
