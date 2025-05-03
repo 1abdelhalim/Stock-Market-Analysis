@@ -89,11 +89,7 @@ def main():
         st.warning("No data available for the selected filters.")
         st.stop()
 
-    # Essential Metrics
-    st.subheader("Essential Metrics")
-    st.markdown("### Metric Definitions")
-    st.markdown("- **RSI (Relative Strength Index):** Measures the speed and change of price movements. Values above 70 indicate overbought conditions, while values below 30 indicate oversold conditions.")
-    st.markdown("- **Sharpe Ratio:** Indicates the risk-adjusted return of an investment. Higher values are better.")
+  
 
     col4, col5 = st.columns(2)
     if "RSI" in filtered_metrics_data.columns and not filtered_metrics_data.empty:
@@ -103,8 +99,16 @@ def main():
 
     # Visualizations
     st.subheader("Visualizations")
-    #st.plotly_chart(px.line(filtered_stock_data, x="Date", y="Close", title=f"{ticker} Closing Price"), use_container_width=True)
+    
+    # RSI Visualization
+    if "RSI" in filtered_metrics_data.columns and not filtered_metrics_data.empty:
+        st.plotly_chart(px.line(filtered_metrics_data, x="Date", y="RSI", title=f"{ticker} RSI (Relative Strength Index)"), use_container_width=True)
 
+    # Sharpe Ratio Visualization
+    if "Sharpe_Ratio" in filtered_metrics_data.columns and not filtered_metrics_data.empty:
+        st.plotly_chart(px.line(filtered_metrics_data, x="Date", y="Sharpe_Ratio", title=f"{ticker} Sharpe Ratio"), use_container_width=True)
+
+    # Existing Moving Average Visualization
     if "MA_20" in filtered_metrics_data.columns and not filtered_metrics_data.empty:
         st.plotly_chart(px.line(filtered_metrics_data, x="Date", y="MA_20", title=f"{ticker} 20-Day Moving Average"), use_container_width=True)
 
