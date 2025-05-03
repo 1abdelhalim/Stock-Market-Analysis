@@ -69,10 +69,7 @@ clean_transform_task = PythonOperator(
     dag=dag,
 )
 
-# Task 4: Compute financial metrics
-def compute_metrics_task():
-    from delta_lake_processing import compute_financial_metrics
-    compute_financial_metrics()
+
 
 compute_metrics = PythonOperator(
     task_id='compute_metrics',
@@ -81,4 +78,4 @@ compute_metrics = PythonOperator(
 )
 
 # Define task dependencies
-ingest_task >> partition_task >> clean_transform_task >> compute_metrics
+ingest_task >> partition_task >> clean_transform_task 
