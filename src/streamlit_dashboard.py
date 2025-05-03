@@ -5,6 +5,8 @@ import datetime
 import os
 import glob
 from dotenv import load_dotenv
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 # Load environment variables
 load_dotenv()
@@ -101,12 +103,40 @@ def main():
 
     # Visualizations
     st.subheader("Visualizations")
-    st.plotly_chart(px.line(filtered_stock_data, x="Date", y="Close", title=f"{ticker} Closing Price"), use_container_width=True)
+    #st.plotly_chart(px.line(filtered_stock_data, x="Date", y="Close", title=f"{ticker} Closing Price"), use_container_width=True)
 
     if "MA_20" in filtered_metrics_data.columns and not filtered_metrics_data.empty:
         st.plotly_chart(px.line(filtered_metrics_data, x="Date", y="MA_20", title=f"{ticker} 20-Day Moving Average"), use_container_width=True)
 
     st.plotly_chart(px.bar(filtered_stock_data, x="Date", y="Volume", title=f"{ticker} Trading Volume"), use_container_width=True)
+
+    # Add Volatility Analysis
+    st.subheader("Volatility Analysis")
+    if not filtered_stock_data.empty:
+        filtered_stock_data['Daily_Volatility'] = filtered_stock_data['High'] - filtered_stock_data['Low']
+        st.metric("Average Daily Volatility", f"${filtered_stock_data['Daily_Volatility'].mean():.2f}")
+
+    # Add Top Gainers/Losers
+    st.subheader("Top Gainers and Losers")
+    filtered_stock_data['Daily_Change'] = (filtered_stock_data['Close'] - filtered_stock_data['Open']) / filtered_stock_data['Open'] * 100
+    st.write("**Top 3 Gainers:**")
+    st.write(filtered_stock_data.nlargest(3, 'Daily_Change')[['Date', 'Ticker', 'Daily_Change']])
+    st.write("**Top 3 Losers:**")
+    st.write(filtered_stock_data.nsmallest(3, 'Daily_Change')[['Date', 'Ticker', 'Daily_Change']])
+
+    # Add Correlation Heatmap (if multiple tickers are selected)
+    st.subheader("Correlation Heatmap")
+    if len(stock_data['Ticker'].unique()) > 1:
+        pivot_data = stock_data.pivot(index='Date', columns='Ticker', values='Close')
+        correlation_matrix = pivot_data.corr()
+        fig, ax = plt.subplots(figsize=(10, 6))
+        sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", ax=ax)
+        st.pyplot(fig)
+
+    # Add Trendline to Closing Price Chart
+    st.subheader("Trend Analysis")
+    fig = px.scatter(filtered_stock_data, x="Date", y="Close", trendline="ols", title=f"{ticker} Closing Price with Trendline")
+    st.plotly_chart(fig, use_container_width=True)
 
     # Insights
     st.subheader("Insights")

@@ -1,5 +1,8 @@
 yfinance
 pandas
+seaborn
+streamlit
+statsmodels
 pyspark==3.4.4
 delta-spark==2.4.0
 setuptools
